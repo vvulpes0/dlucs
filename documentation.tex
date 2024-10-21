@@ -1,0 +1,2520 @@
+\documentclass[11pt]{book}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{Baskervaldx}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}\setlist[enumerate]{leftmargin=*}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage{microtype}
+\title{{DLUCS} Lightweight \(\mu\)-Coded System}
+\newcommand*{\encoding}[1]{\noindent
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\multicolumn{1}{c}{15}&
+\multicolumn{1}{c}{14}&
+\multicolumn{1}{c}{13}&
+\multicolumn{1}{c}{12}&
+\multicolumn{1}{c}{11}&
+\multicolumn{1}{c}{10}&
+\multicolumn{1}{c}{9}&
+\multicolumn{1}{c}{8}&
+\multicolumn{1}{c}{7}&
+\multicolumn{1}{c}{6}&
+\multicolumn{1}{c}{5}&
+\multicolumn{1}{c}{4}&
+\multicolumn{1}{c}{3}&
+\multicolumn{1}{c}{2}&
+\multicolumn{1}{c}{1}&
+\multicolumn{1}{c}{0}\\\hline
+#1\\\hline
+\end{tabular}}
+\newcommand*{\instruction}[2][]{%
+  \clearpage
+  \thispagestyle{fancy}%
+  \fancyhf[HL,HR]{\huge{#2}}%
+  \fancyhf[HC]{#1}\addtocounter{section}{1}\noindent
+}
+\let\geq\geqslant
+\let\leq\leqslant
+\let\emptyset\varnothing
+\author{Dakotah Lambert}
+\date{}
+\begin{document}
+\maketitle
+\frontmatter
+\tableofcontents
+
+\mainmatter
+\chapter{Architecture Overview}
+\section{Introduction}
+The \textsc{dlucs} architecture implements
+a featureful public instruction set
+as microcode atop a simple internal core.
+Each instruction consists of a series of eight micro\"operations,
+which allows complex operations to be described by a compact program.
+
+\section{Programmer's Model}
+The public instruction set of the \textsc{dlucs} system
+is a two-address architecture
+intended for use in an educational setting.
+Every instruction is conditionally executed.
+
+\subsection{Registers}
+There are eight 16-bit registers,
+named R0--R6 and SP.
+All are general-purpose registers,
+in that any may serve as the source or destination
+for any instruction,
+but SP serves as the stack pointer.
+Care should be taken to avoid violating the invariant
+that SP points to the top of the stack,
+as interrupt processing may use the stack at any time.
+Additionally, there is a 16-bit program counter,
+and a four-bit flags register.
+
+\subsection{Flags and Conditions}
+The four bits stored in the flags register are as follows:
+zero (Z), set if the result of an operation is zero,
+negative (N), set if the result of an operation has its sign-bit set,
+overflow (V), set if an arithmetic operation resulted in signed overflow,
+and carry (C), set if an arithmetic operation resulted in carry out,
+the unsigned analogue of signed overflow.
+These are ordered CNVZ from most to least significant.
+Not all operations affect all flags;
+see the individual instruction listings for full detail.
+
+Each instruction specifies the conditions
+under which it should be executed.
+If these conditions are not met,
+then the instruction is passed over without effect.
+
+\subsection{Memory System}
+The \textsc{dlucs} system is a von Neumann system,
+with up to 64KB of addressable memory
+attached to an external 8-bit bus.
+The memory at address zero should be non-volatile,
+as this is the initial program counter upon reset.
+The stack pointer SP should be placed
+such that pushing a value will use writeable memory.
+
+By means of the \textsc{offs} instruction,
+indirect addressing, and
+the register modes for \textsc{j} and \textsc{call},
+the system offers direct support
+for writing position-independent code
+that will execute properly no matter its location in memory.
+
+\subsection{Initial State}
+At reset, the program counter is zero.
+No further assumptions may be made.
+Namely, the general-purpose registers,
+the stack pointer,
+and the flags register are in an indeterminate state.
+
+\section{Microprogrammer's Model}
+The micro\-programmer sees a smaller, simpler system.
+Most work is accomplished through manipulation of two hidden registers.
+The microcode control store consists of
+24-bit words indexed by the five-bit opcode of the instruction,
+a two bit ``mode select'',
+and three bits of execution state;
+each operation is allowed up to eight micro\"operations.
+In states 0 and 1, the full instruction has not yet been read
+from memory, so these states require extra care.
+
+\subsection{Registers}
+The primary registers available to the micro\-programmer are
+A and B, which connect directly to the \textsc{alu}.
+Additionally, the I register contains the currently latched instruction.
+Only a limited selection of general-purpose registers are available,
+namely, the stack pointer
+and those registers encoded by the source and destination fields
+of the instruction.
+
+\subsection{The Bus}
+The internal 16-bit data bus may be loaded from one of eight sources:
+the constant zero,
+the constant one,
+the program counter,
+the register file
+(selecting the source register,
+ the destination register,
+ or the stack pointer),
+the \textsc{alu},
+the contents of memory,
+the I register, or
+the flags register.
+For small sources such as the 8-bit memory bus
+and the four-bit flags register,
+the data is loaded into the least-significant bits,
+while the upper bits are filled with zero.
+The contents of the bus can be written to any combination of
+the A register,
+the B register,
+the program counter,
+memory,
+one of the three accessible general-purpose registers,
+or the flags register.
+By setting a bit in the control word,
+the contents of the bus may optionally be byte-swapped.
+
+\subsection{Accessing Memory}
+Memory is addressed by either the program counter or the A register.
+Either may optionally be post-incremented.
+The A register can optionally be post-decremented.
+
+\subsection{ALU Operation}
+Seven bits control the \textsc{alu}.
+The A and B registers as well as the computed result
+may independently be optionally inverted,
+with one bit devoted to each.
+The remaining four bits determine
+which of sixteen operations to perform.
+For full detail, see the chapter on microcode operations.
+
+\subsection{Interrupt Handling}
+One bit of the control word acknowledges
+that handling has begun for a pending interrupt request.
+
+
+\chapter{Instruction Set Summary}
+This chapter provides a brief overview
+of the \textsc{dlucs} public instruction set.
+Each page is headed with the internal mnemonic and short description
+of an instruction.
+A mathematical or logical description of the operation is provided,
+as well as the standard assembler syntax.
+Note that for the indirect load and store instructions,
+\textsc{ldi} and \textsc{sti},
+the internal mnemonic is not used by the standard assembler.
+Instead, these are treated as if they were additional addressing modes
+for the \textsc{ld} instruction.
+Additionally, each instruction lists its binary format,
+an overview of its effect on the flags register,
+and listings of the standard microcode implementation.
+Micro\"operations are described in detail in the following chapter.
+
+The binary formats are given in memory order:
+the byte containing the opcode is stored at a lower address
+than the byte containing the source
+and destination register specifications.
+However, when 16-bit immediate data is provided,
+this is always treated as a little-endian word.
+The least-significant byte is stored at the lower address.
+Similarly, return addresses pushed to and popped from the system stack
+are interpreted in little-endian fashion.
+
+\section{Condition Codes}
+Every \textsc{dlucs} instruction includes a four-bit condition field.
+If the condition is not satisfied, then the instruction has no effect
+beyond incrementing the program counter.
+The available conditions are displayed in the following table,
+alongside their respective meanings
+if used after a comparison operation.
+Conditions are specified as suffixes on instructions.
+For instance, ``\texttt{ADD R0,1}''
+unconditionally adds 1 into register R0,
+while ``\texttt{ADDC R0,1}'' does so
+only if the carry flag is set.
+
+\begin{center}
+\begin{tabular}{cclll}
+  \toprule
+  Code&Name&Test&\textsc{cmp}\\\midrule
+  0000&&\(\top\)\\
+  0001&c&\(\text{C}\)&\(\geq_U\)\\
+  0010&n&\(\text{N}\)\\
+  0011&v&\(\text{V}\)\\
+  0100&z&\(\text{Z}\)&\(=\)\\
+  0101&ls&\(\neg\text{C}\vee\text{Z}\)&\(\leq_U\)\\
+  0110&lt&\(\text{N}\oplus\text{V}\)&\(<_S\)\\
+  0111&le&\((\text{N}\oplus\text{V})\vee\text{Z}\)
+  &\(\leq_S\)\\
+  \bottomrule
+\end{tabular}\qquad
+\begin{tabular}{cclll}
+  \toprule
+  Code&Name&Test&\textsc{cmp}\\\midrule
+  1000&f&\(\bot\)\\
+  1001&cc&\(\neg\text{C}\)&\(<_U\)\\
+  1010&p&\(\neg\text{N}\)\\
+  1011&nv&\(\neg\text{V}\)\\
+  1100&nz&\(\neg\text{Z}\)&\(\neq\)\\
+  1101&hi&\(\text{C}\wedge\neg\text{Z}\)&\(>_U\)\\
+  1110&ge&\(\neg\text{N}\oplus\text{V}\)&\(\geq_S\)\\
+  1111&gt&\((\neg\text{N}\oplus\text{V})\wedge\neg\text{Z}\)
+  &\(>_S\)\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\section{Operating Modes}
+Most instructions offer three addressing modes.
+Mode 0 uses the contents of a register as the source operand.
+Mode 1 uses the source field as signed three-bit data,
+representing the integers \(-3\) through \(+3\).
+The remaining bit pattern, which would correspond to \(-4\),
+is used to activate mode 2,
+where the source operand is 16-bit little-endian immediate data
+following the instruction.
+For the shift and rotate instructions,
+whose operands are inherently unsigned,
+the embedded source field is treated as \emph{unsigned} data.
+In this case, mode 2 is activated not by the bit pattern 100,
+which validly specifies the number \(4\),
+but by the bit pattern 000,
+as a zero-bit shift or rotation performs no operation.
+
+The remaining mode pattern, mode 3,
+activates when there is a pending interrupt request
+upon entering state 0,
+and handles this request
+by pushing the program counter to the stack
+and jumping to address 8.
+This request must be acknowledged,
+but only at the very last micro\"operation.
+The standard microcode implementing this is as follows.
+
+{\ttfamily\selectfont\small
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a
+  \item 0 \(\rightarrow\) b; a-
+  \item pc \(\rightarrow\) mem; *a|swab|a-
+  \item pc \(\rightarrow\) mem; *a
+  \item alu \(\rightarrow\) sp; or
+  \item 1 \(\rightarrow\) a,b
+  \item alu \(\rightarrow\) a,b; lsl
+  \item alu \(\rightarrow\) pc; lsl|ack
+  \end{enumerate}
+}
+
+
+\instruction[Add With Carry]{ADC}
+\subsection*{Operation}
+\(\text{Destination}+\text{Source}+\text{C}
+\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{ADC[cc] Destination,Source}
+
+\subsection*{Description}
+Add the source operand to the destination register
+along with the carry bit,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if carry occurred\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: set if overflow occurred\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; adc|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; adc|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; adc|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Add]{ADD}
+\subsection*{Operation}
+\(\text{Destination}+\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{ADD[cc] Destination,Source}
+
+\subsection*{Description}
+Add the source operand to the destination register
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if carry occurred\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: set if overflow occurred\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; add|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; add|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; add|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Bitwise Logical And]{AND}
+\subsection*{Operation}
+\(\text{Destination}\wedge\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{AND[cc] Destination,Source}
+
+\subsection*{Description}
+Compute the bitwise logical \textsc{and}
+of the source operand and the destination register,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; and|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; and|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; and|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Arithmetic Shift Right]{ASR}
+\subsection*{Operation}
+\(\lfloor\text{Destination}/2^{\text{Source}}\rfloor
+  \rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{ASR[cc] Destination,Source}
+
+\subsection*{Description}
+Shift the destination register right as many times
+as specified by the source operand, treated as unsigned.
+The most-significant bit of the destination register
+is shifted into newly open positions.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&0&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&0&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if any set bit was shifted out\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; asr|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; add+
+  \item alu \(\rightarrow\) b; add+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; and
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; asr|wf
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; asr|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Jump to Subroutine]{CALL}
+\subsection*{Operation}
+\(\text{PC}\rightarrow\ast({-}{-}\text{SP})\);
+\(\text{Source}\rightarrow\text{PC}\)
+
+\subsection*{Assembler Syntax}
+\texttt{CALL[cc] Address}
+
+\subsection*{Description}
+Push the address of the next instruction onto the stack
+and jump to the indicated address.
+Valid addresses are 16-bit little-endian immediate data,
+or the contents of a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&1&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{--}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&1&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{2}\ttfamily\selectfont\small
+  \subsubsection*{Register}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 0 \(\rightarrow\) b; a-|pc+
+  \item pc \(\rightarrow\) mem; *a|swab|a-
+  \item pc \(\rightarrow\) mem; *a
+  \item alu \(\rightarrow\) sp; or
+  \item rs \(\rightarrow\) pc
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 0 \(\rightarrow\) b; a-|pc+
+  \item pc \(\rightarrow\) mem; *a|swab|a-
+  \item pc \(\rightarrow\) mem; *a
+  \item alu \(\rightarrow\) sp; or
+  \item mem \(\rightarrow\) a; pc+
+  \item mem \(\rightarrow\) b; pc+|swab
+  \item alu \(\rightarrow\) pc; or
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Count Bits Set]{CBS}
+\subsection*{Operation}
+\(\#\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{CBS[cc] Destination,Source}
+
+\subsection*{Description}
+Count the number of bits set in the source operand,
+and store the result in the destination register.
+This is also called the ``population count'' or ``Hamming weight''.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&1&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&1&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; s3bf
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) a; or
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Count Leading Zeros]{CLZ}
+\subsection*{Operation}
+\(15-\lfloor\log_2(\text{Source})\rfloor\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{CLZ[cc] Destination,Source}
+
+\subsection*{Description}
+Count the number of leading zero-bits in the source operand,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&1&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&1&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; \(\neg\)fd
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; s3bf
+  \item alu \(\rightarrow\) a; \(\neg\)fd
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) a; or
+  \item alu \(\rightarrow\) a; \(\neg\)fd
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Compare]{CMP}
+\subsection*{Operation}
+\(\text{Destination}-\text{Source}\)
+
+\subsection*{Assembler Syntax}
+\texttt{CMP[cc] Destination,Source}
+
+\subsection*{Description}
+Subtract the source operand from the destination register.
+Do not store the result, but do update flags accordingly.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&0&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&0&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if carry occurred\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: set if overflow occurred\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) \(\emptyset\); sub|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) \(\emptyset\); sub|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) \(\emptyset\); sub|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Count Trailing Zeros]{CTZ}
+\subsection*{Operation}
+\(\lfloor\log_2(\text{Source}\wedge-\text{Source})\rfloor
+\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{CTZ[cc] Destination,Source}
+
+\subsection*{Description}
+Count the number of trailing zero-bits in the source operand,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; rev
+  \item alu \(\rightarrow\) a; \(\neg\)fd
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; s3bf
+  \item alu \(\rightarrow\) a; rev
+  \item alu \(\rightarrow\) a; \(\neg\)fd
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) a; or
+  \item alu \(\rightarrow\) a; rev
+  \item alu \(\rightarrow\) a; \(\neg\)fd
+  \item alu \(\rightarrow\) rd; cbs|wf
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Transfer Flags]{FLG}
+\subsection*{Operation}
+\(\text{Source},\text{Flags}\rightarrow\text{Flags},\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{FLG[cc] Destination,Source}
+
+\subsection*{Description}
+Store the current flags in the destination register
+and set the flags to the contents of the source operand.
+Valid sources are 16-bit little-endian immediate data
+(of which only the low four bits are used),
+or a register.
+Embedded immediates are not available.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set from source\\
+  N: set from source
+
+  \columnbreak\noindent
+  V: set from source\\
+  Z: set from source
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{2}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item flags \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; rev
+  \item alu \(\rightarrow\) rd; rev
+  \item alu \(\rightarrow\) \(\emptyset\); s3bf|wf
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item flags \(\rightarrow\) a; pc+
+  \item alu \(\rightarrow\) a; rev
+  \item alu \(\rightarrow\) rd; rev
+  \item alu \(\rightarrow\) \(\emptyset\); s3bf|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Jump]{J}
+\subsection*{Operation}
+\(\text{Source}\rightarrow\text{PC}\)
+
+\subsection*{Assembler Syntax}
+\texttt{J[cc] Address}
+
+\subsection*{Description}
+Continue execution at the indicated address.
+Valid addresses are 16-bit little-endian immediate data,
+or the contents of a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{--}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{2}\ttfamily\selectfont\small
+  \subsubsection*{Register}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) pc
+  \item --
+  \item --
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) a; pc+
+  \item mem \(\rightarrow\) b; pc+|swab
+  \item alu \(\rightarrow\) pc; or
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Load]{LD}
+\subsection*{Operation}
+\(\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{LD[cc] Destination,Source}
+
+\subsection*{Description}
+Copy the contents of the source operand into the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&0&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&0&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) a,b
+  \item alu \(\rightarrow\) rd; or
+  \item --
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; s3bf
+  \item --
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) rd; or
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Load Indirect]{LDI}
+\subsection*{Operation}
+\(\ast\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{LD[cc] Destination,(Source)}
+
+\subsection*{Description}
+Copy the contents of the memory location
+indexed by the source operand into the destination register.
+This is always a word-sized transfer.
+Valid sources are 16-bit little-endian immediate data
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&1&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&1&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{2}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) a
+  \item mem \(\rightarrow\) b; *a|a+
+  \item mem \(\rightarrow\) a; *a|swab
+  \item alu \(\rightarrow\) rd; or
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) a; or
+  \item mem \(\rightarrow\) b; *a|a+
+  \item mem \(\rightarrow\) a; *a|swab
+  \item alu \(\rightarrow\) rd; or
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Logical Shift Left]{LSL}
+\subsection*{Operation}
+\(\text{Destination}\cdot 2^{\text{Source}}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{LSL[cc] Destination,Source}
+
+\subsection*{Description}
+Shift the destination register left as many times
+as specified by the source operand, treated as unsigned.
+Zero is shifted into newly open positions.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&1&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&1&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if any set bit was shifted out\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; lsl|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; add+
+  \item alu \(\rightarrow\) b; add+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; and
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; lsl|wf
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; lsl|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Logical Shift Right]{LSR}
+\subsection*{Operation}
+\(\lfloor\text{Destination}/2^{\text{Source}}\rfloor
+\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{LSR[cc] Destination,Source}
+
+\subsection*{Description}
+Shift the destination register right as many times
+as specified by the source operand, treated as unsigned.
+Zero is shifted into newly open positions.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&1&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&1&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if any set bit was shifted out\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; lsr|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; add+
+  \item alu \(\rightarrow\) b; add+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; and
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; lsr|wf
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; lsr|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Negate]{NEG}
+\subsection*{Operation}
+\(-\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{NEG[cc] Destination,Source}
+
+\subsection*{Description}
+Subtract the source operand from zero
+and place the result into the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{0&1&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{0&1&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if result is zero\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: set if overflow occurred\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item 0 \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sub|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item 0 \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sub|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item 0 \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sub|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Logical Complement]{NOT}
+\subsection*{Operation}
+\(\neg\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{NOT[cc] Destination,Source}
+
+\subsection*{Description}
+Invert the bits of the source operand
+and place the result into the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&0&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) a,b
+  \item alu \(\rightarrow\) rd; nor|wf
+  \item --
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) a,b; s3bf
+  \item alu \(\rightarrow\) rd; nor|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) rd; nor|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Program Counter Offset]{OFFS}
+\subsection*{Operation}
+\(\text{PC}+\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{OFFS[cc] Destination,Source}
+
+\subsection*{Description}
+Add the source operand
+to the address of the next instruction
+and place the result into the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+As instructions are two bytes long,
+three-bit immediates are doubled for convenience.
+For example, the bit pattern 101 corresponds not to -3 but to -6.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&0&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) a
+  \item pc \(\rightarrow\) b
+  \item alu \(\rightarrow\) rd; add
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) a,b; s3bf
+  \item alu \(\rightarrow\) a; add
+  \item pc \(\rightarrow\) b
+  \item alu \(\rightarrow\) rd; add
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) a; or
+  \item pc \(\rightarrow\) b
+  \item alu \(\rightarrow\) rd; add
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Bitwise Logical Inclusive-Or]{OR}
+\subsection*{Operation}
+\(\text{Destination}\vee\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{OR[cc] Destination,Source}
+
+\subsection*{Description}
+Compute the bitwise logical inclusive-\textsc{or}
+of the source operand and the destination register,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&0&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; or|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; or|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; or|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Pop From Stack]{POP}
+\subsection*{Operation}
+\(\ast(\text{SP}{+}{+})\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{POP[cc] Destination}
+
+\subsection*{Description}
+Read a word from the top of the stack,
+place this result into the destination register,
+and advance the stack pointer.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&0&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{--}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+{\ttfamily\selectfont\small
+  \subsubsection*{Register}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; *a|a+
+  \item mem \(\rightarrow\) a; *a|swab
+  \item alu \(\rightarrow\) rd; or
+  \item sp \(\rightarrow\) a
+  \item 1 \(\rightarrow\) b; a+
+  \item alu \(\rightarrow\) sp; add
+  \end{enumerate}
+}
+
+
+\instruction[Push to Stack]{PUSH}
+\subsection*{Operation}
+\(\text{Source}\rightarrow\ast({-}{-}\text{SP})\)
+
+\subsection*{Assembler Syntax}
+\texttt{PUSH[cc] Source}
+
+\subsection*{Description}
+Decrement the stack pointer,
+push the source operand onto the top of the stack.
+Only register operands may be used.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&1&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+{\ttfamily\selectfont\small
+  \subsubsection*{Register}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 0 \(\rightarrow\) b; a-; pc+
+  \item rs \(\rightarrow\) mem; *a|swab|a-
+  \item rs \(\rightarrow\) mem; *a
+  \item alu \(\rightarrow\) sp; or
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+}
+
+
+\instruction[Return From Subroutine]{RET}
+\subsection*{Operation}
+\(\ast(\text{SP}{+}{+})\rightarrow\text{PC}\)
+
+\subsection*{Assembler Syntax}
+\texttt{RET[cc]}
+
+\subsection*{Description}
+Read a word from the top of the stack,
+place this result into the program counter,
+and advance the stack pointer.
+Continue execution from the popped address.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&1&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{--}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+{\ttfamily\selectfont\small
+  \subsubsection*{Zero-Address}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; *a|a+
+  \item mem \(\rightarrow\) a; *a|swab
+  \item alu \(\rightarrow\) pc; or
+  \item sp \(\rightarrow\) a
+  \item 1 \(\rightarrow\) b; a+
+  \item alu \(\rightarrow\) sp; add
+  \end{enumerate}
+}
+
+
+\instruction[Rotate Left Through Carry]{RLC}
+\subsection*{Operation}
+\(\text{C:Destination}\circlearrowleft \text{Source}\)
+
+\subsection*{Assembler Syntax}
+\texttt{RLC[cc] Destination,Source}
+
+\subsection*{Description}
+Rotate the destination register left
+through the carry bit as many times
+as specified by the source operand, treated as unsigned.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&1&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&0&1&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set by rotation\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rlc|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; add+
+  \item alu \(\rightarrow\) b; add+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; and
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rlc|wf
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rlc|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Rotate Left]{ROL}
+\subsection*{Operation}
+\(\text{Destination}\circlearrowleft \text{Source}\)
+
+\subsection*{Assembler Syntax}
+\texttt{ROL[cc] Destination,Source}
+
+\subsection*{Description}
+Rotate the destination register left as many times
+as specified by the source operand, treated as unsigned.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&0&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&0&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: 0\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rol|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; add+
+  \item alu \(\rightarrow\) b; add+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; and
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rol|wf
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rol|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Rotate Right]{ROR}
+\subsection*{Operation}
+\(\text{Destination}\circlearrowright \text{Source}\)
+
+\subsection*{Assembler Syntax}
+\texttt{ROR[cc] Destination,Source}
+
+\subsection*{Description}
+Rotate the destination register right as many times
+as specified by the source operand, treated as unsigned.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&1&0&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: 0\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; ror|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; add+
+  \item alu \(\rightarrow\) b; add+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; and
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; ror|wf
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; ror|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Rotate Right Through Carry]{RRC}
+\subsection*{Operation}
+\(\text{C:Destination}\circlearrowright \text{Source}\)
+
+\subsection*{Assembler Syntax}
+\texttt{RRC[cc] Destination,Source}
+
+\subsection*{Description}
+Rotate the destination register right
+through the carry bit as many times
+as specified by the source operand, treated as unsigned.
+Valid sources are 16-bit little-endian immediate data,
+embedded unsigned three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&1&0&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set by rotation\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rrc|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; add+
+  \item alu \(\rightarrow\) b; add+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; and
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rrc|wf
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; rrc|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Subtract With Carry]{SBC}
+\subsection*{Operation}
+\(\text{Destination}-\text{Source}-\neg\text{C}
+\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{SBC[cc] Destination,Source}
+
+\subsection*{Description}
+Subtract the source operand from the destination register,
+accounting for the carry bit,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&1&0&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if carry occurred\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: set if overflow occurred\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sbc|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sbc|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sbc|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Sign-Extend Low-Order Byte]{SEX}
+\subsection*{Operation}
+\(\text{Source\({}_{7:0}\)}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{SEX[cc] Destination,Source}
+
+\subsection*{Description}
+Replace the high-order byte of the source operand
+with copies of its \(2^7\) bit,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&0&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&1&0&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: 0\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: 0\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; lsl
+  \item alu \(\rightarrow\) b; lsl
+  \item rs \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; lsl
+  \item alu \(\rightarrow\) rd; asr|wf
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) a; s3bf
+  \item 0 \(\rightarrow\) b
+  \item alu \(\rightarrow\) rd; asr|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item 1 \(\rightarrow\) a,b; pc+
+  \item alu \(\rightarrow\) a,b; lsl
+  \item alu \(\rightarrow\) b; lsl
+  \item mem \(\rightarrow\) a; pc+
+  \item alu \(\rightarrow\) a; lsl|pc+
+  \item alu \(\rightarrow\) rd; asr|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Store Indirect]{STI}
+\subsection*{Operation}
+\(\text{Source}\rightarrow\ast\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{LD[cc] (Destination),Source}\\
+\texttt{LDB[cc] (Destination),Source}\\
+
+\subsection*{Description}
+Copy the contents of the source register
+into the memory location indexed by the destination register.
+Only register operands may be used.
+The \(2^6\) bit, which normally indicates immediate mode,
+is a size toggle.
+If clear, transfer only a byte.
+If set, transfer a full word.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&1&0&0%
+&\multicolumn{4}{|c|}{cond}%
+&s&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{2}\ttfamily\selectfont\small
+  \subsubsection*{Byte}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rd \(\rightarrow\) a
+  \item rs \(\rightarrow\) mem; *a|a+
+  \item --
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Word}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rd \(\rightarrow\) a
+  \item rs \(\rightarrow\) mem; *a|a+
+  \item rs \(\rightarrow\) mem; *a|swab
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Subtract]{SUB}
+\subsection*{Operation}
+\(\text{Destination}-\text{Source}\rightarrow\text{Destination}\)
+
+\subsection*{Assembler Syntax}
+\texttt{SUB[cc] Destination,Source}
+
+\subsection*{Description}
+Subtract the source operand from the destination register
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&1&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&1&1&0&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: set if carry occurred\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: set if overflow occurred\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sub|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sub|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; sub|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+
+\instruction[Exchange Contents of Two Registers]{XCG}
+\subsection*{Operation}
+\(\text{Source},\text{Destination}
+\rightarrow\text{Destination},\text{Source}\)
+
+\subsection*{Assembler Syntax}
+\texttt{XCG[cc] Destination,Source}
+
+\subsection*{Description}
+Swap the contents of the source and destination registers.
+Only register operands may be used.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&1&1&0%
+&\multicolumn{4}{|c|}{cond}%
+&0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: unaffected
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: unaffected
+\end{multicols}
+
+\subsection*{Standard Microcode}
+{\ttfamily\selectfont\small
+  \subsubsection*{Reg-Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rd \(\rightarrow\) a
+  \item rs \(\rightarrow\) b
+  \item alu \(\rightarrow\) a; xor
+  \item alu \(\rightarrow\) rs,b; xor
+  \item alu \(\rightarrow\) rd; xor
+  \item --
+  \end{enumerate}
+}
+
+
+\instruction[Bitwise Logical Exclusive-Or]{XOR}
+\subsection*{Operation}
+\(\text{Destination}\oplus\text{Source}\rightarrow\text{Destination}\)
+\subsection*{Assembler Syntax}
+\texttt{XOR[cc] Destination,Source}
+
+\subsection*{Description}
+Compute the bitwise logical exclusive-\textsc{or}
+of the source operand and the destination register,
+and store the result in the destination register.
+Valid sources are 16-bit little-endian immediate data,
+embedded sign-extended three-bit immediate data,
+or a register.
+
+\subsection*{Instruction Encoding}
+\encoding{1&1&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
+\encoding{\multicolumn{16}{|c|}{immediate data}}
+
+\vspace{2\baselineskip}
+\encoding{1&1&1&1&1%
+&\multicolumn{4}{|c|}{cond}%
+&m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
+
+\subsection*{Flags}
+\begin{multicols}{2}\noindent
+  C: unaffected\\
+  N: set if result is negative
+
+  \columnbreak\noindent
+  V: unaffected\\
+  Z: set if result is zero
+\end{multicols}
+
+\subsection*{Standard Microcode}
+\begin{multicols}{3}\ttfamily\selectfont\small
+  \subsubsection*{Reg--Reg}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item rs \(\rightarrow\) b
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; xor|wf
+  \item --
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Short Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item i \(\rightarrow\) a
+  \item alu \(\rightarrow\) b; s3bf
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; xor|wf
+  \item --
+  \item --
+  \end{enumerate}
+  \columnbreak
+  \subsubsection*{Long Immediate}
+  \begin{enumerate}\setcounter{enumi}{-1}
+  \item sp \(\rightarrow\) a; pc+
+  \item pc+
+  \item mem \(\rightarrow\) b; pc+
+  \item mem \(\rightarrow\) a; pc+|swab
+  \item alu \(\rightarrow\) b; or
+  \item rd \(\rightarrow\) a
+  \item alu \(\rightarrow\) rd; xor|wf
+  \item --
+  \end{enumerate}
+\end{multicols}
+
+\end{document}
