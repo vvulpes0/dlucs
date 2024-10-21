@@ -96,7 +96,7 @@
                (lsl|s_a|s_b), \
                (lsl|s_pc|ack)
 
-static unsigned long ops[] = {
+static unsigned long ins_adc[32] = {
 	/* ADC :: Reg-Reg */
 	uop0,adc1,
 	l_rs  | s_b,
@@ -123,7 +123,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_add[32] = {
 	/* ADD :: Reg-Reg */
 	uop0,add1,
 	l_rs  | s_b,
@@ -150,7 +152,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_and[32] = {
 	/* AND :: Reg-Reg */
 	uop0,and1,
 	l_rs  | s_b,
@@ -177,7 +181,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_asr[32] = {
 	/* ASR :: Reg-Reg */
 	uop0,asr1,
 	l_rs  | s_b,
@@ -204,7 +210,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_call[32] = {
 	/* CALL :: Register */
 	uop0,call1,
 	l_pc | s_mem | starA | swab | decA,
@@ -225,7 +233,9 @@ static unsigned long ops[] = {
 	or    | s_pc,
 
 	nomode,
+};
 
+static unsigned long ins_cbs[32] = {
 	/* CBS :: Reg-Reg */
 	uop0,cbs1,
 	l_rs | s_a,
@@ -252,7 +262,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_clz[32] = {
 	/* CLZ :: Reg-Reg */
 	uop0,clz1,
 	l_rs | s_a,
@@ -279,7 +291,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_cmp[32] = {
 	/* CMP :: Reg-Reg */
 	uop0,cmp1,
 	l_rs  | s_b,
@@ -306,7 +320,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_ctz[32] = {
 	/* CTZ :: Reg-Reg */
 	uop0,ctz1,
 	l_rs | s_a,
@@ -333,7 +349,9 @@ static unsigned long ops[] = {
 	cbs   | s_rd | s_f,
 
 	nomode,
+};
 
+static unsigned long ins_flg[32] = {
 	/* FLG :: Reg-Reg */
 	uop0,flg1,
 	l_rs | s_b,
@@ -354,7 +372,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_j[32] = {
 	/* J :: Register */
 	uop0,j1,
 	l_rs | s_pc,
@@ -375,7 +395,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_ld[32] = {
 	/* LD :: Reg-Reg */
 	uop0,ld1,
 	l_rs | s_a | s_b,
@@ -402,7 +424,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_ldi[32] = {
 	/* LDI :: Reg-Reg */
 	uop0,ldi1,
 	l_rs  | s_a,
@@ -423,7 +447,9 @@ static unsigned long ops[] = {
 	or    | s_rd,
 
 	nomode,
+};
 
+static unsigned long ins_lsl[32] = {
 	/* LSL :: Reg-Reg */
 	uop0,lsl1,
 	l_rs | s_b,
@@ -450,7 +476,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_lsr[32] = {
 	/* LSR :: Reg-Reg */
 	uop0,lsr1,
 	l_rs | s_b,
@@ -477,7 +505,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_neg[32] = {
 	/* NEG :: Reg-Reg */
 	uop0,neg1,
 	l_rs | s_b,
@@ -504,7 +534,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_not[32] = {
 	/* NOT :: Reg-Reg */
 	uop0,not1,
 	l_rs | s_a  | s_b,
@@ -531,7 +563,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_offs[32] = {
 	/* OFFS :: Reg-Reg */
 	uop0,offs1,
 	l_rs | s_a,
@@ -558,7 +592,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_or[32] = {
 	/* OR :: Reg-Reg */
 	uop0,or1,
 	l_rs | s_b,
@@ -585,7 +621,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_pop[32] = {
 	/* POP :: Register */
 	uop0,pop1,
 	l_mem | s_b  | starA | incA,
@@ -600,7 +638,9 @@ static unsigned long ops[] = {
 	nomode,
 
 	nomode,
+};
 
+static unsigned long ins_push[32] = {
 	/* PUSH :: Reg-Reg */
 	uop0,push1,
 	l_rs | s_mem | starA | swab | decA,
@@ -615,7 +655,9 @@ static unsigned long ops[] = {
 	nomode,
 
 	nomode,
+};
 
+static unsigned long ins_ret[32] = {
 	/* RET :: Zero-Address */
 	uop0,ret1,
 	l_mem | s_b  | starA | incA,
@@ -630,7 +672,9 @@ static unsigned long ops[] = {
 	nomode,
 
 	nomode,
+};
 
+static unsigned long ins_rlc[32] = {
 	/* RLC :: Reg-Reg */
 	uop0,rlc1,
 	l_rs | s_b,
@@ -657,7 +701,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_rol[32] = {
 	/* ROL :: Reg-Reg */
 	uop0,rol1,
 	l_rs | s_b,
@@ -684,7 +730,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_ror[32] = {
 	/* ROR :: Reg-Reg */
 	uop0,ror1,
 	l_rs | s_b,
@@ -711,7 +759,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_rrc[32] = {
 	/* RRC :: Reg-Reg */
 	uop0,rrc1,
 	l_rs | s_b,
@@ -738,7 +788,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_sbc[32] = {
 	/* SBC :: Reg-Reg */
 	uop0,sbc1,
 	l_rs | s_b,
@@ -765,7 +817,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_sex[32] = {
 	/* SEX :: Reg-Reg */
 	uop0,sex1,
 	lsl  | s_a  | s_b,
@@ -792,7 +846,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_sti[32] = {
 	/* STI :: Byte (Register slot) */
 	uop0,sti1,
 	l_rd | s_a,
@@ -819,7 +875,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_sub[32] = {
 	/* SUB :: Reg-Reg */
 	uop0,sub1,
 	l_rs | s_b,
@@ -846,7 +904,9 @@ static unsigned long ops[] = {
 	0UL,
 
 	nomode,
+};
 
+static unsigned long ins_xcg[32] = {
 	/* XCG :: Reg-Reg */
 	uop0,xcg1,
 	l_rd | s_a,
@@ -861,7 +921,9 @@ static unsigned long ops[] = {
 	nomode,
 
 	nomode,
+};
 
+static unsigned long ins_xor[32] = {
 	/* XOR :: Reg-Reg */
 	uop0,xor1,
 	l_rs | s_b,
@@ -890,14 +952,30 @@ static unsigned long ops[] = {
 	nomode,
 };
 
+static unsigned long *ops[] = {
+	ins_ld,   ins_ldi,  ins_sti, ins_neg,
+	ins_sex,  ins_offs, ins_cmp, ins_xcg,
+	ins_clz,  ins_ctz,  ins_cbs, ins_flg,
+	ins_push, ins_pop,  ins_j,   ins_call,
+	ins_and,  ins_or,   ins_xor, ins_not,
+	ins_add,  ins_adc,  ins_sub, ins_sbc,
+	ins_ror,  ins_rol,  ins_rrc, ins_rlc,
+	ins_lsr,  ins_lsl,  ins_asr, ins_ret,
+};
+
 int
 main(void)
 {
 	size_t i;
+	size_t j;
+	size_t addr = 0;
 	printf("v3.0 hex words addressed");
 	for (i = 0; i < sizeof(ops)/sizeof(*ops); ++i) {
-		if (i%8 == 0) printf("\n%03zx:",i);
-		printf(" %06lx",ops[i]);
+		for (j = 0; j < sizeof(ins_ld)/sizeof(*ins_ld); ++j) {
+			if (j%8 == 0) printf("\n%03zx:",addr);
+			printf(" %06lx",ops[i][j]);
+			++addr;
+		}
 	}
 	printf("\n");
 	return 0;

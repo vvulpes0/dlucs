@@ -306,13 +306,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&0&0&0%
+\encoding{1&0&1&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&0&0&0%
+\encoding{1&0&1&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -381,13 +381,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&0&0&1%
+\encoding{1&0&1&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&0&0&1%
+\encoding{1&0&1&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -457,13 +457,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&0&1&0%
+\encoding{1&0&0&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&0&1&0%
+\encoding{1&0&0&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -535,13 +535,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&0&1&1%
+\encoding{1&1&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&0&1&1%
+\encoding{1&1&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -610,13 +610,13 @@ Valid addresses are 16-bit little-endian immediate data,
 or the contents of a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&1&0&0%
+\encoding{0&1&1&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{--}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&1&0&0%
+\encoding{0&1&1&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{source}}
 
@@ -674,13 +674,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&1&0&1%
+\encoding{0&1&0&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&1&0&1%
+\encoding{0&1&0&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -749,13 +749,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&1&1&0%
+\encoding{0&1&0&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&1&1&0%
+\encoding{0&1&0&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -824,13 +824,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&0&1&1&1%
+\encoding{0&0&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&0&1&1&1%
+\encoding{0&0&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -900,13 +900,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&0&0&0%
+\encoding{0&1&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&0&0&0%
+\encoding{0&1&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -976,13 +976,13 @@ or a register.
 Embedded immediates are not available.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&0&0&1%
+\encoding{0&1&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&0&0&1%
+\encoding{0&1&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1037,13 +1037,13 @@ Valid addresses are 16-bit little-endian immediate data,
 or the contents of a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&0&1&0%
+\encoding{0&1&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{--}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&0&1&0%
+\encoding{0&1&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{source}}
 
@@ -1099,13 +1099,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&0&1&1%
+\encoding{0&0&0&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&0&1&1%
+\encoding{0&0&0&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1174,13 +1174,13 @@ Valid sources are 16-bit little-endian immediate data
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&1&0&0%
+\encoding{0&0&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&1&0&0%
+\encoding{0&0&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1238,13 +1238,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&1&0&1%
+\encoding{1&1&1&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&1&0&1%
+\encoding{1&1&1&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1315,13 +1315,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&1&1&0%
+\encoding{1&1&1&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&1&1&0%
+\encoding{1&1&1&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1390,13 +1390,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{0&1&1&1&1%
+\encoding{0&0&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{0&1&1&1&1%
+\encoding{0&0&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1465,13 +1465,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&0&0&0%
+\encoding{1&0&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&0&0&0&0%
+\encoding{1&0&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1544,13 +1544,13 @@ three-bit immediates are doubled for convenience.
 For example, the bit pattern 101 corresponds not to -3 but to -6.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&0&0&1%
+\encoding{0&0&1&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&0&0&0&1%
+\encoding{0&0&1&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1620,13 +1620,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&0&1&0%
+\encoding{1&0&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&0&0&1&0%
+\encoding{1&0&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1693,7 +1693,7 @@ place this result into the destination register,
 and advance the stack pointer.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&0&1&1%
+\encoding{0&1&1&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{--}}
 
@@ -1736,7 +1736,7 @@ push the source operand onto the top of the stack.
 Only register operands may be used.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&1&0&0%
+\encoding{0&1&1&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{source}}
 
@@ -1780,7 +1780,7 @@ and advance the stack pointer.
 Continue execution from the popped address.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&1&0&1%
+\encoding{1&1&1&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{--}&\multicolumn{3}{|c|}{--}}
 
@@ -1826,13 +1826,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&1&1&0%
+\encoding{1&1&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&0&1&1&0%
+\encoding{1&1&0&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -1901,13 +1901,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&0&1&1&1%
+\encoding{1&1&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&0&1&1&1%
+\encoding{1&1&0&0&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -2052,13 +2052,13 @@ embedded unsigned three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&1&0&0&1%
+\encoding{1&1&0&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&0&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&1&0&0&1%
+\encoding{1&1&0&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -2129,13 +2129,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&1&0&1&0%
+\encoding{1&0&1&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&1&0&1&0%
+\encoding{1&0&1&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -2205,13 +2205,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&1&0&1&1%
+\encoding{0&0&1&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&1&0&1&1%
+\encoding{0&0&1&0&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -2283,7 +2283,7 @@ If clear, transfer only a byte.
 If set, transfer a full word.
 
 \subsection*{Instruction Encoding}
-\encoding{1&1&1&0&0%
+\encoding{0&0&0&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &s&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -2340,13 +2340,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&1&1&0&1%
+\encoding{1&0&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&1&1&0&1%
+\encoding{1&0&1&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -2413,7 +2413,7 @@ Swap the contents of the source and destination registers.
 Only register operands may be used.
 
 \subsection*{Instruction Encoding}
-\encoding{1&1&1&1&0%
+\encoding{0&0&1&1&1%
 &\multicolumn{4}{|c|}{cond}%
 &0&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
@@ -2458,13 +2458,13 @@ embedded sign-extended three-bit immediate data,
 or a register.
 
 \subsection*{Instruction Encoding}
-\encoding{1&1&1&1&1%
+\encoding{1&0&0&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &1&\multicolumn{3}{|c|}{rd}&1&0&0}\\\null\qquad
 \encoding{\multicolumn{16}{|c|}{immediate data}}
 
 \vspace{2\baselineskip}
-\encoding{1&1&1&1&1%
+\encoding{1&0&0&1&0%
 &\multicolumn{4}{|c|}{cond}%
 &m&\multicolumn{3}{|c|}{rd}&\multicolumn{3}{|c|}{source}}
 
