@@ -215,6 +215,7 @@
       <a name="fanout" val="1"/>
       <a name="incoming" val="16"/>
     </comp>
+    <comp lib="0" loc="(1550,250)" name="Ground"/>
     <comp lib="0" loc="(1580,900)" name="Constant">
       <a name="value" val="0x0"/>
       <a name="width" val="16"/>
@@ -833,7 +834,10 @@ b10008 801820 602008 260004 802082 602008 40004 550010
     <wire from="(1490,230)" to="(1500,230)"/>
     <wire from="(150,90)" to="(150,180)"/>
     <wire from="(1500,1040)" to="(1500,1100)"/>
+    <wire from="(1520,190)" to="(1520,200)"/>
+    <wire from="(1520,190)" to="(1550,190)"/>
     <wire from="(1540,220)" to="(1620,220)"/>
+    <wire from="(1550,190)" to="(1550,250)"/>
     <wire from="(1580,900)" to="(1600,900)"/>
     <wire from="(1590,420)" to="(1630,420)"/>
     <wire from="(1590,540)" to="(1590,560)"/>
