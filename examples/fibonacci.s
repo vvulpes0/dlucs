@@ -1,5 +1,5 @@
 	ld    r0,0
-	ld    r1,7 - (1<<1) * 3
+	ld    r1,1
 loop:	add   r0,r1
 	xcg   r0,r1
 	offs  r6,loop

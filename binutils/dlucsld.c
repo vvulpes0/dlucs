@@ -423,20 +423,18 @@ push_locs(size_t i, struct DynArr *exp, size_t offset, size_t roffset,
 		pos |= (unsigned char)(buf[i++])<<8;
 		pos += section ? roffset : offset;
 		size = (unsigned char)(buf[i++]);
-		if (buf[i] != '_') {
-			sym.offset = pos;
-			sym.size = size;
-			memcpy(sym.name, buf + i, size);
-			x = lookup(*exp, sym);
-			if (x < exp->size) {
-				print_err();
-				fprintf(stderr,
-				        "multiple definitions of "
-				        "symbol \"%.*s\"\n",
-				        (int)(size), sym.name);
-			}
-			push_symbol(exp, sym);
+		sym.offset = pos;
+		sym.size = size;
+		memcpy(sym.name, buf + i, size);
+		x = lookup(*exp, sym);
+		if (x < exp->size) {
+			print_err();
+			fprintf(stderr,
+			        "multiple definitions of "
+			        "symbol \"%.*s\"\n",
+			        (int)(size), sym.name);
 		}
+		push_symbol(exp, sym);
 		i += size;
 		--n;
 	}

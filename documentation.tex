@@ -797,8 +797,8 @@ or the contents of a register.
   \begin{enumerate}\setcounter{enumi}{-1}
   \item sp \(\rightarrow\) a; pc\(+\)
   \item 0 \(\rightarrow\) b; a\(-\)|pc\(+\)
-  \item pc \(\rightarrow\) mem; \(\ast\)a|swab|a\(-\)
-  \item pc \(\rightarrow\) mem; \(\ast\)a
+  \item pc\(+\)2 \(\rightarrow\) mem; \(\ast\)a|swab|a\(-\)
+  \item pc\(+\)2 \(\rightarrow\) mem; \(\ast\)a
   \item alu \(\rightarrow\) sp; or
   \item mem \(\rightarrow\) a; pc\(+\)
   \item mem \(\rightarrow\) b; pc\(+\)|swab
@@ -2700,7 +2700,8 @@ or a register.
   Bits&&Description\\\midrule
   000&0&Zero\\
   001&1&One\\
-  010&pc&PC\\
+  010&pc&PC if regsel\({}\neq{}\)3\\
+  &pc\(+\)2&PC\({}+{}\)2 if regsel\({}={}\)3\\
   011&&Register (per regsel)\\
   100&alu&Output of \textsc{alu}\\
   101&mem&Memory contents\\

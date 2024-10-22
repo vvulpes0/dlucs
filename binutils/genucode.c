@@ -3,6 +3,7 @@
 #define l_0      ( 0UL<<21)
 #define l_1      ( 1UL<<21)
 #define l_pc     ( 2UL<<21)
+#define l_pcp2   ( l_pc | 3UL<<13)
 #define l_alu    ( 4UL<<21)
 #define l_mem    ( 5UL<<21)
 #define l_i      ( 6UL<<21)
@@ -225,8 +226,8 @@ static unsigned long ins_call[32] = {
 	nomode,
 	/* CALL :: Long Immediate */
 	uop0,call1,
-	l_pc  | s_mem | starA | swab | decA,
-	l_pc  | s_mem | starA,
+	l_pcp2  | s_mem | starA | swab | decA,
+	l_pcp2  | s_mem | starA,
 	or    | s_sp,
 	l_mem | s_a   | incPC,
 	l_mem | s_b   | incPC | swab,

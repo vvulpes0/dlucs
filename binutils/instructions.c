@@ -589,6 +589,7 @@ do_instr(struct Node *ins, struct DynArr *istream, size_t *offset,
 			x.filled = 0;
 			x.length = 4;
 			encoding |= (1UL<<6);
+			encoding |= ext(im.short_type);
 		}
 		x.encoding[0] = (encoding>>8)&0xFF;
 		x.encoding[1] =  encoding    &0xFF;
@@ -712,7 +713,7 @@ fits(long value, enum ShortType type)
 static unsigned long
 ext(enum ShortType type)
 {
-	if (type == S_S3 || type == S_S3DE) return 4;
+	if (type != S_U3) return 4;
 	return 0;
 }
 

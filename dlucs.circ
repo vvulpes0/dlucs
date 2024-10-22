@@ -142,6 +142,14 @@
       <a name="incoming" val="4"/>
     </comp>
     <comp lib="0" loc="(1430,1030)" name="Power"/>
+    <comp lib="0" loc="(1440,230)" name="Constant">
+      <a name="value" val="0x0"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="0" loc="(1440,250)" name="Constant">
+      <a name="value" val="0x2"/>
+      <a name="width" val="16"/>
+    </comp>
     <comp lib="0" loc="(1450,140)" name="Constant">
       <a name="facing" val="north"/>
       <a name="value" val="0x0"/>
@@ -419,6 +427,9 @@
       <a name="size" val="30"/>
       <a name="width" val="24"/>
     </comp>
+    <comp lib="1" loc="(1440,270)" name="AND Gate">
+      <a name="size" val="30"/>
+    </comp>
     <comp lib="1" loc="(180,760)" name="AND Gate">
       <a name="facing" val="south"/>
       <a name="size" val="30"/>
@@ -450,6 +461,9 @@
       <a name="facing" val="west"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="2" loc="(1480,240)" name="Multiplexer">
+      <a name="width" val="16"/>
+    </comp>
     <comp lib="2" loc="(1580,1000)" name="Multiplexer">
       <a name="facing" val="west"/>
       <a name="selloc" val="tr"/>
@@ -469,6 +483,9 @@
     <comp lib="2" loc="(840,430)" name="Multiplexer">
       <a name="selloc" val="tr"/>
       <a name="width" val="3"/>
+    </comp>
+    <comp lib="3" loc="(1540,220)" name="Adder">
+      <a name="width" val="16"/>
     </comp>
     <comp lib="4" loc="(110,370)" name="Register">
       <a name="appearance" val="classic"/>
@@ -507,8 +524,15 @@
       <a name="addrWidth" val="15"/>
       <a name="appearance" val="classic"/>
       <a name="contents">addr/data: 15 8
-0 40 0 49 a0 1 38 1
-28 75 28 f0 70 6
+0 54 8 0 0 41 0 a
+78 44 16 80 b0 51 76 44
+6 80 70 44 12 80 60 2
+60 3 60 4 0 50 0 58
+88 9 72 44 36 80 f0 49
+a0 90 a8 9c e8 41 d8 61
+88 9 70 44 22 80 0 2
+0 b 68 20 68 18 68 10
+f8
 </a>
       <a name="label" val="progROM"/>
       <a name="labelvisible" val="true"/>
@@ -598,7 +622,7 @@ b10008 805802 602008 40004 550010 500010 803802 20000c
 602008 40004 550010 500010 803802 20000c 80014c 808160
 682008 c0004 550010 500010 803802 600020 0 0
 602008 40004 550010 500010 803802 20000c 80014c 808160
-682008 c0004 550010 500010 803802 a80008 a90004 801820
+682008 c0004 556010 506010 803802 a80008 a90004 801820
 602008 40004 550010 500010 803802 20000c 80014c 808160
 682008 80000 600004 604008 804403 0 0 0
 682008 80000 c00008 8003c4 604008 804403 0 0
@@ -718,8 +742,12 @@ b10008 801820 602008 260004 802082 602008 40004 550010
     <wire from="(1130,140)" to="(1130,970)"/>
     <wire from="(1130,970)" to="(1600,970)"/>
     <wire from="(1140,140)" to="(1140,220)"/>
-    <wire from="(1150,140)" to="(1150,380)"/>
-    <wire from="(1160,140)" to="(1160,390)"/>
+    <wire from="(1150,140)" to="(1150,260)"/>
+    <wire from="(1150,260)" to="(1150,380)"/>
+    <wire from="(1150,260)" to="(1410,260)"/>
+    <wire from="(1160,140)" to="(1160,280)"/>
+    <wire from="(1160,280)" to="(1160,390)"/>
+    <wire from="(1160,280)" to="(1410,280)"/>
     <wire from="(1170,140)" to="(1170,620)"/>
     <wire from="(1170,620)" to="(1370,620)"/>
     <wire from="(1170,70)" to="(1170,80)"/>
@@ -790,14 +818,22 @@ b10008 801820 602008 260004 802082 602008 40004 550010
     <wire from="(1430,1050)" to="(1440,1050)"/>
     <wire from="(1430,120)" to="(1430,200)"/>
     <wire from="(1430,120)" to="(1450,120)"/>
+    <wire from="(1440,230)" to="(1450,230)"/>
+    <wire from="(1440,250)" to="(1450,250)"/>
+    <wire from="(1440,270)" to="(1460,270)"/>
     <wire from="(1450,1060)" to="(1450,1080)"/>
     <wire from="(1450,130)" to="(1450,140)"/>
     <wire from="(1450,30)" to="(1450,120)"/>
     <wire from="(1460,1060)" to="(1460,1140)"/>
+    <wire from="(1460,260)" to="(1460,270)"/>
     <wire from="(1470,1040)" to="(1500,1040)"/>
     <wire from="(1470,130)" to="(1670,130)"/>
+    <wire from="(1480,240)" to="(1490,240)"/>
+    <wire from="(1490,230)" to="(1490,240)"/>
+    <wire from="(1490,230)" to="(1500,230)"/>
     <wire from="(150,90)" to="(150,180)"/>
     <wire from="(1500,1040)" to="(1500,1100)"/>
+    <wire from="(1540,220)" to="(1620,220)"/>
     <wire from="(1580,900)" to="(1600,900)"/>
     <wire from="(1590,420)" to="(1630,420)"/>
     <wire from="(1590,540)" to="(1590,560)"/>
@@ -812,7 +848,7 @@ b10008 801820 602008 260004 802082 602008 40004 550010
     <wire from="(1610,990)" to="(1620,990)"/>
     <wire from="(1620,1010)" to="(1620,1020)"/>
     <wire from="(1620,1020)" to="(1680,1020)"/>
-    <wire from="(1620,210)" to="(1620,910)"/>
+    <wire from="(1620,220)" to="(1620,910)"/>
     <wire from="(1620,980)" to="(1620,990)"/>
     <wire from="(1620,980)" to="(1640,980)"/>
     <wire from="(1630,420)" to="(1630,910)"/>
@@ -870,7 +906,7 @@ b10008 801820 602008 260004 802082 602008 40004 550010
     <wire from="(30,160)" to="(30,420)"/>
     <wire from="(30,420)" to="(90,420)"/>
     <wire from="(300,120)" to="(300,210)"/>
-    <wire from="(300,210)" to="(1620,210)"/>
+    <wire from="(300,210)" to="(1500,210)"/>
     <wire from="(360,180)" to="(420,180)"/>
     <wire from="(360,70)" to="(360,180)"/>
     <wire from="(370,130)" to="(370,160)"/>
