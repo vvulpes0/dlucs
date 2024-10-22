@@ -1,6 +1,7 @@
 \documentclass[11pt]{book}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{tabularray}\UseTblrLibrary{booktabs}
 \usepackage{Baskervaldx}
 \usepackage[margin=1in]{geometry}
 \usepackage{enumitem}\setlist[enumerate]{leftmargin=*}
@@ -43,6 +44,154 @@
 \maketitle
 \frontmatter
 \tableofcontents
+
+\clearpage
+\section*{Quick Reference}\markboth{}{}\pagestyle{empty}
+\begin{center}
+%% \begin{tabular}{clllcccc}
+\begin{tblr}{
+    colspec={clllcccc},
+    stretch=0,
+}
+  \toprule
+  Opcode&&Assembly&Description&C&N&V&Z\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Loads and Stores}}\\\midrule
+  00&LD&ld dest,source&Load Direct&--&--&--&--\\
+  01&LDI&ld dest,(source)&Load Indirect&--&--&--&--\\
+  02&STI&ld (dest),source&Store Indirect&--&--&--&--\\
+  &&ldb (dest),source&&&&&\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Arithmetic}}\\\midrule
+  03&NEG&neg dest,source&Negate&\(\ast\)&\(\ast\)&\(\ast\)&\(\ast\)\\
+  04&SEX&sex dest,source&Sign-Extend Low-Order Byte
+  &0&\(\ast\)&0&\(\ast\)\\
+  05&OFFS&offs dest,source&Program Counter Offset&--&--&--&--\\
+  06&CMP&cmp dest,source&Compare&\(\ast\)&\(\ast\)&\(\ast\)&\(\ast\)\\
+  14&ADD&add dest,source&Add&\(\ast\)&\(\ast\)&\(\ast\)&\(\ast\)\\
+  15&ADC&adc dest,source&Add With Carry
+  &\(\ast\)&\(\ast\)&\(\ast\)&\(\ast\)\\
+  16&SUB&sub dest,source&Subtract&\(\ast\)&\(\ast\)&\(\ast\)&\(\ast\)\\
+  17&SBC&sbc dest,source&Subtract With Carry
+  &\(\ast\)&\(\ast\)&\(\ast\)&\(\ast\)\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Bit Twiddling}}\\\midrule
+  08&CLZ&clz dest,source&Count Leading Zeros&--&0&--&\(\ast\)\\
+  09&CTZ&ctz dest,source&Count Trailing Zeros&--&0&--&\(\ast\)\\
+  0A&CBS&cbs dest,source&Count Bits Set\vphantom{g}&--&0&--&\(\ast\)\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Logic}}\\\midrule
+  10&AND&and dest,source&Bitwise Logical AND&--&\(\ast\)&--&\(\ast\)\\
+  11&OR&or dest,source&Bitwise Logical Inclusive-OR
+  &--&\(\ast\)&--&\(\ast\)\\
+  12&XOR&xor dest,source&Bitwise Logical Exclusive-OR
+  &--&\(\ast\)&--&\(\ast\)\\
+  13&NOT&not dest,source&Logical Complement
+  &--&\(\ast\)&--&\(\ast\)\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Rotations and Shifts}}\\\midrule
+  18&ROR&ror dest,source&Rotate Right&0&\(\ast\)&0&\(\ast\)\\
+  19&ROL&rol dest,source&Rotate Left&0&\(\ast\)&0&\(\ast\)\\
+  1A&RRC&rrc dest,source&Rotate Right Through Carry
+  &\(\ast\)&\(\ast\)&0&\(\ast\)\\
+  1B&RLC&rlc dest,source&Rotate Left Through Carry
+  &\(\ast\)&\(\ast\)&0&\(\ast\)\\
+  1C&LSR&lsr dest,source&Logical Shift Right
+  &\(\ast\)&\(\ast\)&0&\(\ast\)\\
+  1D&LSL&lsl dest,source&Logical Shift Left
+  &\(\ast\)&\(\ast\)&0&\(\ast\)\\
+  1E&ASR&asr dest,source&Arithmetic Shift Right
+  &\(\ast\)&\(\ast\)&0&\(\ast\)\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Stack Operations}}\\\midrule
+  0C&PUSH&push source&Push to Stack&--&--&--&--\\
+  0D&POP&pop dest&Pop From Stack&--&--&--&--\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Control Flow}}\\\midrule
+  0E&J&j address&Jump&--&--&--&--\\
+  0F&CALL&call address&Jump to Subroutine&--&--&--&--\\
+  1F&RET&ret&Return From Subroutine\vphantom{g}&--&--&--&--\\
+  \midrule\SetCell[c=8]{c}{\footnotesize\strut
+    \textbf{Exchanges}}\\\midrule
+  07&XCG&xcg dest, source&Exchange Contents of Registers&--&--&--&--\\
+  0B&FLG&flg dest, source&Transfer Flags
+  &\(\ast\)&\(\ast\)&\(\ast\)&\(\ast\)\\
+  \bottomrule
+\end{tblr}
+\end{center}
+
+\section*{Condition Codes}\thispagestyle{empty}\pagestyle{empty}
+\begin{center}
+\begin{tabular}{cclll}
+  \toprule
+  Code&Name&Test&CMP\\\midrule
+  0000&&\(\top\)\\
+  0001&c&\(\text{C}\)&\(\geq_U\)\\
+  0010&n&\(\text{N}\)\\
+  0011&v&\(\text{V}\)\\
+  0100&z&\(\text{Z}\)&\(=\)\\
+  0101&ls&\(\neg\text{C}\vee\text{Z}\)&\(\leq_U\)\\
+  0110&lt&\(\text{N}\oplus\text{V}\)&\(<_S\)\\
+  0111&le&\((\text{N}\oplus\text{V})\vee\text{Z}\)
+  &\(\leq_S\)\\
+  \bottomrule
+\end{tabular}\qquad
+\begin{tabular}{cclll}
+  \toprule
+  Code&Name&Test&CMP\\\midrule
+  1000&f&\(\bot\)\\
+  1001&cc&\(\neg\text{C}\)&\(<_U\)\\
+  1010&p&\(\neg\text{N}\)\\
+  1011&nv&\(\neg\text{V}\)\\
+  1100&nz&\(\neg\text{Z}\)&\(\neq\)\\
+  1101&hi&\(\text{C}\wedge\neg\text{Z}\)&\(>_U\)\\
+  1110&ge&\(\neg\text{N}\oplus\text{V}\)&\(\geq_S\)\\
+  1111&gt&\((\neg\text{N}\oplus\text{V})\wedge\neg\text{Z}\)
+  &\(>_S\)\\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Registers}
+\begin{itemize}
+\item 16-bit general purpose registers: R0--R6
+\item Stack pointer: SP, aka R7
+\item Program counter: PC
+\item Flags: Carry (C), Negative (N), Overflow (V), Zero (Z)
+\end{itemize}
+
+\noindent
+Source and destination fields may always be any
+of the general-purpose registers or the stack pointer.
+Many instructions also support
+16-bit little-endian absolute immediate source operands
+following the instruction,
+or sign-extended 3-bit absolute immediate source operands
+embedded in the instruction.
+For rotations and shifts,
+3-bit immediate operands are treated as unsigned.
+
+\section*{Additional Assembly Tools}
+\begin{itemize}
+\item \texttt{\textit{label}:\@ \textit{instruction}} --- assign label
+\item \texttt{db [\textit{num} [,\textit{num}\dots]]} ---
+  insert bytes (8-bit values) directly
+\item \texttt{dw [\textit{num} [,\textit{num}\dots]]} ---
+  insert words (16-bit values, little-endian) directly
+\item \texttt{RAM} --- switch to RAM segment
+\end{itemize}
+
+\section*{Sample Program}
+\noindent Compute largest 16-bit unsigned Fibonacci number into R0:
+
+{\noindent\ttfamily\selectfont\small
+\null\hspace{0.5in}\hbox to 0.5in{ld\hss}r0,0\\
+\null\hspace{0.5in}\hbox to 0.5in{ld\hss}r1,1\\
+\null\hbox to 0.5in{loop:\hss}\hbox to 0.5in{add\hss}r0,r1\\
+\null\hspace{0.5in}\hbox to 0.5in{xcg\hss}r0,r1\\
+\null\hspace{0.5in}\hbox to 0.5in{offs\hss}r6,loop\\
+\null\hspace{0.5in}\hbox to 0.5in{offsc\hss}r6,done\\
+\null\hbox to 0.5in{done:\hss}\hbox to 0.5in{j\hss}r6}
 
 \mainmatter
 \chapter{Architecture Overview}
@@ -89,7 +238,7 @@ If these conditions are not met,
 then the instruction is passed over without effect.
 
 \subsection{Memory System}
-The \textsc{dlucs} system is a von Neumann system,
+The \textsc{dlucs} system is a Princeton architecture system,
 with up to 64KB of addressable memory
 attached to an external 8-bit bus.
 The memory at address zero should be non-volatile,
@@ -220,7 +369,7 @@ only if the carry flag is set.
 \begin{center}
 \begin{tabular}{cclll}
   \toprule
-  Code&Name&Test&\textsc{cmp}\\\midrule
+  Code&Name&Test&CMP\\\midrule
   0000&&\(\top\)\\
   0001&c&\(\text{C}\)&\(\geq_U\)\\
   0010&n&\(\text{N}\)\\
@@ -234,7 +383,7 @@ only if the carry flag is set.
 \end{tabular}\qquad
 \begin{tabular}{cclll}
   \toprule
-  Code&Name&Test&\textsc{cmp}\\\midrule
+  Code&Name&Test&CMP\\\midrule
   1000&f&\(\bot\)\\
   1001&cc&\(\neg\text{C}\)&\(<_U\)\\
   1010&p&\(\neg\text{N}\)\\
@@ -295,7 +444,7 @@ The standard microcode implementing this is as follows.
 \rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{ADC[cc] Destination,Source}
+\texttt{ADC[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Add the source operand to the destination register
@@ -371,7 +520,7 @@ or a register.
 \(\text{Destination}+\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{ADD[cc] Destination,Source}
+\texttt{ADD[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Add the source operand to the destination register
@@ -446,7 +595,7 @@ or a register.
 \(\text{Destination}\wedge\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{AND[cc] Destination,Source}
+\texttt{AND[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Compute the bitwise logical \textsc{and}
@@ -523,7 +672,7 @@ or a register.
   \rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{ASR[cc] Destination,Source}
+\texttt{ASR[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Shift the destination register right as many times
@@ -601,7 +750,7 @@ or a register.
 \(\text{Source}\rightarrow\text{PC}\)
 
 \subsection*{Assembler Syntax}
-\texttt{CALL[cc] Address}
+\texttt{CALL[\textit{cc}] \textit{address}}
 
 \subsection*{Description}
 Push the address of the next instruction onto the stack
@@ -663,7 +812,7 @@ or the contents of a register.
 \(\#\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{CBS[cc] Destination,Source}
+\texttt{CBS[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Count the number of bits set in the source operand,
@@ -687,7 +836,7 @@ or a register.
 \subsection*{Flags}
 \begin{multicols}{2}\noindent
   C: unaffected\\
-  N: set if result is negative
+  N: 0
 
   \columnbreak\noindent
   V: unaffected\\
@@ -739,7 +888,7 @@ or a register.
 \(15-\lfloor\log_2(\text{Source})\rfloor\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{CLZ[cc] Destination,Source}
+\texttt{CLZ[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Count the number of leading zero-bits in the source operand,
@@ -762,7 +911,7 @@ or a register.
 \subsection*{Flags}
 \begin{multicols}{2}\noindent
   C: unaffected\\
-  N: set if result is negative
+  N: 0
 
   \columnbreak\noindent
   V: unaffected\\
@@ -814,7 +963,7 @@ or a register.
 \(\text{Destination}-\text{Source}\)
 
 \subsection*{Assembler Syntax}
-\texttt{CMP[cc] Destination,Source}
+\texttt{CMP[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Subtract the source operand from the destination register.
@@ -890,7 +1039,7 @@ or a register.
 \rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{CTZ[cc] Destination,Source}
+\texttt{CTZ[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Count the number of trailing zero-bits in the source operand,
@@ -913,7 +1062,7 @@ or a register.
 \subsection*{Flags}
 \begin{multicols}{2}\noindent
   C: unaffected\\
-  N: set if result is negative
+  N: 0
 
   \columnbreak\noindent
   V: unaffected\\
@@ -965,7 +1114,7 @@ or a register.
 \(\text{Source},\text{Flags}\rightarrow\text{Flags},\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{FLG[cc] Destination,Source}
+\texttt{FLG[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Store the current flags in the destination register
@@ -1029,7 +1178,7 @@ Embedded immediates are not available.
 \(\text{Source}\rightarrow\text{PC}\)
 
 \subsection*{Assembler Syntax}
-\texttt{J[cc] Address}
+\texttt{J[\textit{cc}] \textit{address}}
 
 \subsection*{Description}
 Continue execution at the indicated address.
@@ -1090,7 +1239,7 @@ or the contents of a register.
 \(\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{LD[cc] Destination,Source}
+\texttt{LD[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Copy the contents of the source operand into the destination register.
@@ -1164,7 +1313,7 @@ or a register.
 \(\ast\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{LD[cc] Destination,(Source)}
+\texttt{LD[\textit{cc}] \textit{destination},(\textit{source})}
 
 \subsection*{Description}
 Copy the contents of the memory location
@@ -1227,7 +1376,7 @@ or a register.
 \(\text{Destination}\cdot 2^{\text{Source}}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{LSL[cc] Destination,Source}
+\texttt{LSL[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Shift the destination register left as many times
@@ -1304,7 +1453,7 @@ or a register.
 \rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{LSR[cc] Destination,Source}
+\texttt{LSR[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Shift the destination register right as many times
@@ -1380,7 +1529,7 @@ or a register.
 \(-\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{NEG[cc] Destination,Source}
+\texttt{NEG[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Subtract the source operand from zero
@@ -1455,7 +1604,7 @@ or a register.
 \(\neg\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{NOT[cc] Destination,Source}
+\texttt{NOT[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Invert the bits of the source operand
@@ -1530,7 +1679,7 @@ or a register.
 \(\text{PC}+\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{OFFS[cc] Destination,Source}
+\texttt{OFFS[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Add the source operand
@@ -1609,7 +1758,7 @@ For example, the bit pattern 101 corresponds not to -3 but to -6.
 \(\text{Destination}\vee\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{OR[cc] Destination,Source}
+\texttt{OR[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Compute the bitwise logical inclusive-\textsc{or}
@@ -1685,7 +1834,7 @@ or a register.
 \(\ast(\text{SP}{+}{+})\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{POP[cc] Destination}
+\texttt{POP[\textit{cc}] \textit{destination}}
 
 \subsection*{Description}
 Read a word from the top of the stack,
@@ -1728,7 +1877,7 @@ and advance the stack pointer.
 \(\text{Source}\rightarrow\ast({-}{-}\text{SP})\)
 
 \subsection*{Assembler Syntax}
-\texttt{PUSH[cc] Source}
+\texttt{PUSH[\textit{cc}] \textit{source}}
 
 \subsection*{Description}
 Decrement the stack pointer,
@@ -1771,7 +1920,7 @@ Only register operands may be used.
 \(\ast(\text{SP}{+}{+})\rightarrow\text{PC}\)
 
 \subsection*{Assembler Syntax}
-\texttt{RET[cc]}
+\texttt{RET[\textit{cc}]}
 
 \subsection*{Description}
 Read a word from the top of the stack,
@@ -1815,7 +1964,7 @@ Continue execution from the popped address.
 \(\text{C:Destination}\circlearrowleft \text{Source}\)
 
 \subsection*{Assembler Syntax}
-\texttt{RLC[cc] Destination,Source}
+\texttt{RLC[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Rotate the destination register left
@@ -1891,7 +2040,7 @@ or a register.
 \(\text{Destination}\circlearrowleft \text{Source}\)
 
 \subsection*{Assembler Syntax}
-\texttt{ROL[cc] Destination,Source}
+\texttt{ROL[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Rotate the destination register left as many times
@@ -1966,7 +2115,7 @@ or a register.
 \(\text{Destination}\circlearrowright \text{Source}\)
 
 \subsection*{Assembler Syntax}
-\texttt{ROR[cc] Destination,Source}
+\texttt{ROR[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Rotate the destination register right as many times
@@ -2041,7 +2190,7 @@ or a register.
 \(\text{C:Destination}\circlearrowright \text{Source}\)
 
 \subsection*{Assembler Syntax}
-\texttt{RRC[cc] Destination,Source}
+\texttt{RRC[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Rotate the destination register right
@@ -2118,7 +2267,7 @@ or a register.
 \rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{SBC[cc] Destination,Source}
+\texttt{SBC[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Subtract the source operand from the destination register,
@@ -2194,7 +2343,7 @@ or a register.
 \(\text{Source\({}_{7:0}\)}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{SEX[cc] Destination,Source}
+\texttt{SEX[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Replace the high-order byte of the source operand
@@ -2270,8 +2419,8 @@ or a register.
 \(\text{Source}\rightarrow\ast\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{LD[cc] (Destination),Source}\\
-\texttt{LDB[cc] (Destination),Source}\\
+\texttt{LD[\textit{cc}] (\textit{destination}),\textit{source}}\\
+\texttt{LDB[\textit{cc}] (\textit{destination}),\textit{source}}\\
 
 \subsection*{Description}
 Copy the contents of the source register
@@ -2330,7 +2479,7 @@ If set, transfer a full word.
 \(\text{Destination}-\text{Source}\rightarrow\text{Destination}\)
 
 \subsection*{Assembler Syntax}
-\texttt{SUB[cc] Destination,Source}
+\texttt{SUB[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Subtract the source operand from the destination register
@@ -2406,7 +2555,7 @@ or a register.
 \rightarrow\text{Destination},\text{Source}\)
 
 \subsection*{Assembler Syntax}
-\texttt{XCG[cc] Destination,Source}
+\texttt{XCG[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Swap the contents of the source and destination registers.
@@ -2447,7 +2596,7 @@ Only register operands may be used.
 \subsection*{Operation}
 \(\text{Destination}\oplus\text{Source}\rightarrow\text{Destination}\)
 \subsection*{Assembler Syntax}
-\texttt{XOR[cc] Destination,Source}
+\texttt{XOR[\textit{cc}] \textit{destination},\textit{source}}
 
 \subsection*{Description}
 Compute the bitwise logical exclusive-\textsc{or}
@@ -2536,12 +2685,12 @@ or a register.
   11&&Complement B\\
   10&&Complement D\\
   9--6&&Operation select\\
-  5&pc&Write PC\\
-  4&mem&Write memory\\
-  3&a&Write A\\
-  2&b&Write B\\
-  1&&Write register (per regsel)\\
-  0&wf&Write flags\\\bottomrule
+  5&pc&Write to PC\\
+  4&mem&Write to memory\\
+  3&a&Write to A\\
+  2&b&Write to B\\
+  1&&Write to register (per regsel)\\
+  0&wf&Set flags from \textsc{alu}\\\bottomrule
 \end{tabular}
 
 \vspace{\baselineskip}\noindent
@@ -2605,6 +2754,148 @@ this expression and its following semicolon can be omitted.
 
 \noindent
 If no bits are set, this is the end of the instruction.
+\end{multicols}
+
+\section{ALU Operations}
+If the \textsc{alu} is output onto the bus,
+the result is one of the following.
+Note that flags are always computed,
+but only written out if the \texttt{wf} bit is set.
+
+\subsection{NAND (Operation 0)}
+Compute the bitwise logical \textsc{nand} of registers A and B.
+By controlling the three complementation bits,
+this also computes the logical
+\textsc{and}, \textsc{or}, and \textsc{nor},
+among other things.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: unaffected
+  \item N: set if result is negative
+  \item V: unaffected
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Adder (Operations 1, 2, and 3)}
+The ALU contains a 16-bit adder with carry-in and carry-out bits.
+In operation 1 (\texttt{adc}),
+the flags register supplies the carry bit.
+In operation 2 (\texttt{add}), it is forced to zero.
+And in operation 3 (\texttt{add+1}), it is forced to one.
+That is, operation 3 can be used to compute
+A\({}-{}\)B by setting the \(\neg\)B bit,
+or B\({}-{}\)A by setting the \(\neg\)A bit.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: set if carry-out occurred
+  \item N: set if result is negative
+  \item V: set if signed overflow occurred
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Exclusive OR (Operation 4)}
+Compute the bitwise logical exclusive-\textsc{or} of registers A and B.
+If an odd number of \(\neg\)A, \(\neg\)B, or \(\neg\)D are set,
+this becomes the bitwise logical \textsc{xnor}.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: unaffected
+  \item N: set if result is negative
+  \item V: unaffected
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Shift Unit (Operations 5, 6, and 7)}
+Shift the A register's contents left or right
+by the value in the B register.
+For the logical shifts, operations 5 and 6,
+zero is shifted in.
+For the arithmetic right shift, operation 7,
+the sign bit is propagated down.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: set if any 1-bit is shifted out
+  \item N: set if result is negative
+  \item V: 0
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Rotator Unit (Operations 8--11)}
+Rotate the contents of the A register
+by the value in the B register.
+For operations 8 and 10,
+the register is rotated within itself.
+For operations 9 and 11,
+the register is rotated through the carry bit.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: 0 (8/10) or by rotation (9/11)
+  \item N: set if result is negative
+  \item V: 0
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Count Bits Set (Operation 12)}
+Count the number of 1-bits in the A register.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: unaffected
+  \item N: 0
+  \item V: unaffected
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Flood Down (Operation 13)}
+Set every bit up to the most-significant set bit
+of the contents of the A register.
+This computes \(2^{\lfloor\log_2\text{A}\rfloor+1}-1\).
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: unaffected
+  \item N: 0
+  \item V: unaffected
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Reverse Bits (Operation 14)}
+Reverse the bits of the contents of the A register.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: unaffected
+  \item N: set if result is negative
+  \item V: unaffected
+  \item Z: set if result is zero
+  \end{itemize}
+\end{multicols}
+
+\subsection{Sign-Extend Low 3 Bits, B to Flags (Operation 15)}
+Output a signed value corresponding
+to the low three bits of the A register.
+Additionally, output the lowest-order bits of the B register
+as flags.
+
+\begin{multicols}{2}
+  \begin{itemize}
+  \item C: set from B
+  \item N: set from B
+  \item V: set from B
+  \item Z: set from B
+  \end{itemize}
 \end{multicols}
 
 \end{document}
