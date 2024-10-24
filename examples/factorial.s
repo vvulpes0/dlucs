@@ -14,14 +14,13 @@ _umul16x16:
 
 	ld r2,0
 	ld r3,0
-	or r1,r1
-mloop:	jz mdone
-	asr r1,1
+mloop:	or r1,r1
+	jz mdone
+	lsr r1,1
 	addc r2,r0
 	adcc r3,r4
 	lsl r0,1
 	rlc r4,1
-	or r1,r1
 	j mloop
 mdone:
 	ld r0,r2
