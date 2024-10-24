@@ -26,9 +26,9 @@ main(int argc, char **argv)
 	struct DynArr exp;
 	struct DynArr needs;
 	struct DynArr internal;
-	char * arg;
-	char * str;
-	char * outfile;
+	char * arg = NULL;
+	char * str = NULL;
+	char * outfile = NULL;
 	size_t load_addr = 0x8000;
 	size_t ram_base = 0x0100;
 	size_t offset;

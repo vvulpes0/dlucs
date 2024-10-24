@@ -1,11 +1,12 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 
 #include "dlucsas.h"
 
 static char const separators[] = "_'_";
+static int digitvalue(int);
 
 struct DynArr
 tokenize(char const * str)
@@ -49,8 +50,8 @@ tokenize(char const * str)
 			} else if (isdigit(c)) {
 				t.type = T_NUM;
 				state = ST_DEC;
-				t.value = digittoint(c);
-			} else if (index("*+-/<>^~",c)) {
+				t.value = digitvalue(c);
+			} else if (strchr("*+-/<>^~",c)) {
 				t.type = T_OP;
 				t.value = c;
 				push_token(&ts, t);
@@ -94,7 +95,7 @@ tokenize(char const * str)
 			}
 			break;
 		case ST_BIN:
-			if (isalnum(c) && !index("01",c)) {
+			if (isalnum(c) && !strchr("01",c)) {
 				ts.valid = 0;
 				fprintf(stderr,
 				        "invalid digit in binary "
@@ -103,7 +104,7 @@ tokenize(char const * str)
 				        line, column);
 				break;
 			}
-			if (index(separators,c)) {
+			if (strchr(separators,c)) {
 				++t.length;
 				break;
 			}
@@ -116,7 +117,7 @@ tokenize(char const * str)
 			}
 			++t.length;
 			t.value *= 2;
-			t.value += digittoint(c);
+			t.value += digitvalue(c);
 			break;
 		case ST_DEC:
 			if (isalnum(c) && !isdigit(c)) {
@@ -128,7 +129,7 @@ tokenize(char const * str)
 				        line, column);
 				break;
 			}
-			if (index(separators,c)) {
+			if (strchr(separators,c)) {
 				++t.length;
 				break;
 			}
@@ -141,7 +142,7 @@ tokenize(char const * str)
 			}
 			++t.length;
 			t.value *= 10;
-			t.value += digittoint(c);
+			t.value += digitvalue(c);
 			break;
 		case ST_HEX:
 			if (isalnum(c) && !isxdigit(c)) {
@@ -153,7 +154,7 @@ tokenize(char const * str)
 				        line, column);
 				break;
 			}
-			if (index(separators,c)) {
+			if (strchr(separators,c)) {
 				++t.length;
 				break;
 			}
@@ -166,7 +167,7 @@ tokenize(char const * str)
 			}
 			++t.length;
 			t.value *= 16;
-			t.value += digittoint(c);
+			t.value += digitvalue(c);
 			break;
 		case ST_WORD:
 			if (!isalnum(c) && c != '_') {
@@ -198,4 +199,14 @@ tokenize(char const * str)
 	t.type = T_END;
 	push_token(&ts, t);
 	return ts;
+}
+
+static int
+digitvalue(int c)
+{
+	char const *str = "0123456789abcdef";
+	char const *ptr = strchr(str, tolower(c));
+	if (!ptr) return 0;
+	if (ptr - str > 15) return 0;
+	return ptr - str;
 }

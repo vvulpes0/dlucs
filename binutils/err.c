@@ -1,5 +1,6 @@
+#define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "dlucsas.h"
@@ -43,8 +44,8 @@ perr_locus(struct Token t, char const * const str)
 		c_line += (str[i++] == '\n');
 	}
 	if (str[i] == '\0') return;
-	endl = index(str + i, '\n');
-	if (!endl) endl = index(str + i, '\0');
+	endl = strchr(str + i, '\n');
+	if (!endl) endl = strchr(str + i, '\0');
 	fprintf(stderr, "%.*s\n", (int)(endl - (str + i)), str + i);
 	j = 0;
 	while (str + i + j < endl) {

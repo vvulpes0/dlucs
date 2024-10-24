@@ -1,13 +1,14 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 
 #include "dlucsas.h"
 #include "instructions.h"
 
 static int addr_mode(struct Arg);
 static void decr(struct DynArr, size_t);
+static int digitvalue(int);
 static int emiti(struct Node *, struct Object *, size_t *,
                  int *, struct Token *, char const *);
 static int eval(struct Node *, struct DynArr, struct Token *,
@@ -471,7 +472,7 @@ reg(struct Token t, char const * str)
 	}
 	if (tolower(str[t.start]) != 'r') return -1;
 	c = str[t.start + 1];
-	if (isdigit(c) && (digittoint(c) < 8)) return digittoint(c);
+	if (isdigit(c) && (digitvalue(c) < 8)) return digitvalue(c);
 	return -1;
 }
 
@@ -638,8 +639,7 @@ do_instr(struct Node *ins, struct DynArr *istream, size_t *offset,
 static struct Instruction
 mkbyte(struct Arg arg)
 {
-	struct Instruction x;
-	x.source = arg;
+	struct Instruction x = {arg, 0, 0, S_NONE, {0,0,0,0}};
 	if (x.source.type == AT_Value) {
 		x.filled = 1;
 		x.encoding[0] = (unsigned char)(x.source.value);
@@ -814,4 +814,14 @@ strncmpi(char const *s1, char const *s2, size_t n)
 		if (c2 < c1) return  1;
 	}
 	return 0;
+}
+
+static int
+digitvalue(int c)
+{
+	char const *str = "0123456789abcdef";
+	char const *ptr = strchr(str, tolower(c));
+	if (!ptr) return 0;
+	if (ptr - str > 15) return 0;
+	return ptr - str;
 }
